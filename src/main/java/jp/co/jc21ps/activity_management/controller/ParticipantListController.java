@@ -46,7 +46,12 @@ public class ParticipantListController {
 
         /*
          * TODO ➊ セッションからuserId, clubIdを取得
+         * ヒント: commonServiceにsessionを取得する共通メソッドを用意している。
+         * Dto型で取得。その後、getメソッドを使用し、取得したい変数を指定する。
          */
+        SessionDto sessionDto = commonService.getSessionDto(session);
+        String userId = sessionDto.getUserId();
+        String leaderClubId = sessionDto.getClubId();
 
         // セッションが切れた場合、エラー画面に遷移
         if (userId.isEmpty()) {
@@ -56,21 +61,41 @@ public class ParticipantListController {
 
         /*
          * ➋TODO dtoに値をセット
+         * activityId, sessionから取得したuserIdをdtoにsetする
          */
+        ParticipantListDto dto = new ParticipantListDto();
+        dto.setActivityId(activityId);
+        dto.setUserId(userId);
 
         try {
             // ➌TODO participantListServiceのgetParticipantListDataメソッドを呼び出す。
+            // 引数にはパラメータをsetした状態のdtoをオブジェクトごと渡す。
+            ParticipantDto responseDto = participantListService.getParticipantListData(dto);
 
             // 返却用のリスト
             List<ParticipantListForm> responseListForm = new ArrayList<>();
 
             /*
              * ➍ TODO responseListFormに値をセット
+             * 拡張for文を使用する。レスポンスを、変数ごとにformにset。
+             * setした状態のformごとリストに追加する。
              */
+            for (ParticipantListDto participant : responseDto.getPariticipantListDto()) {
+                ParticipantListForm form = new ParticipantListForm();
+                form.setUserId(participant.getUserId());
+                form.setUserName(participant.getUserName());
+                form.setActivityId(participant.getActivityId());
+                form.setActivityName(participant.getActivityName());
+                responseListForm.add(form);
+            }
 
             /*
              * ➎ TODO 取得したデータを画面側に渡す。
+             * ・レスポンスをhtml側で用意しているformに設定する。
+             * ・返却値から活動名のみを取得し、オブジェクトに設定する。
              */
+            mav.addObject("participantListForm", responseListForm);
+            mav.addObject("activityName", responseDto.getActivityName());
 
             // messages.propertiesからメッセージを取得
             String resultMessage = messageSource.getMessage("notpariticipant", null, Locale.getDefault());
@@ -84,7 +109,5 @@ public class ParticipantListController {
         }
 
         return mav;
-
     }
-
 }
